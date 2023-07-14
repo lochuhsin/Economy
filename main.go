@@ -1,18 +1,31 @@
 package main
 
 import (
-	"fmt"
+	"log"
 
-	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/widget"
+	"github.com/hajimehoshi/ebiten/v2"
+)
+
+const (
+	// macbook pro max size
+	// generated using ebiten.ScreenSizeInFullscreen()
+	// these values should be either placed in environment or ...etc
+	ScreenWidth  = 1512
+	ScreenHeight = 982
 )
 
 func main() {
-	fmt.Println("Hello World")
-	a := app.New()
-	w := a.NewWindow("Hello World")
+	ScreenWidth, ScreenHeight := ebiten.ScreenSizeInFullscreen()
+	log.Println(ScreenWidth, ScreenHeight)
+	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
 
-	w.SetContent(widget.NewLabel("Hello World!"))
-	w.ShowAndRun()
+	// Initialize People with concurrency e.g 100 people per batch
+	entitySettings := EntitySettings{
+		Population: 10000000,
+	}
 
+	game := InitGameScene(entitySettings)
+	if err := ebiten.RunGame(game); err != nil {
+		log.Fatal(err)
+	}
 }
