@@ -23,6 +23,8 @@ func (g *Game) Update() error {
 
 	// pass entity manager through system to update
 	PeopleMovement(&g.entityManager)
+	Transaction(&g.entityManager)
+	GroupTotalWealth(&g.entityManager)
 
 	return nil
 }

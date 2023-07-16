@@ -21,7 +21,7 @@ func main() {
 
 	// Initialize People with concurrency e.g 100 people per batch
 	entitySettings := EntitySettings{
-		Population: 10000000,
+		Population: 100000,
 	}
 
 	game := InitGameScene(entitySettings)

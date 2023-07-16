@@ -15,16 +15,19 @@ func InitCamera(x int, y int) Camera {
 	return Camera{Vec2D{x, y}}
 }
 
-func (c *Camera) Draw(screen *ebiten.Image, entityManager *EntityManager, count int) {
+func (c *Camera) Draw(screen *ebiten.Image, manager *EntityManager, count int) {
 	// people
-	for _, population := range entityManager.DrawPopulation {
+	averageGroupWealth := manager.World.WorldWealth / float64(len(manager.GroupPeople))
+	for _, population := range manager.GroupPeople {
+		imgResizeFactor := population.GroupWealth / averageGroupWealth
 		img, drawOp := population.DrawParameter(screen, count)
 		drawOp.GeoM.Translate(-float64(c.Position.X), -float64(c.Position.Y))
+		drawOp.GeoM.Scale(imgResizeFactor, imgResizeFactor)
 		screen.DrawImage(img, drawOp)
 	}
 
 	// market
-	img, drawOp := entityManager.Market.DrawParameter(screen)
+	img, drawOp := manager.Market.DrawParameter(screen)
 	drawOp.GeoM.Translate(-float64(c.Position.X), -float64(c.Position.Y))
 	screen.DrawImage(img, drawOp)
 

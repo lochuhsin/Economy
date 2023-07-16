@@ -18,33 +18,35 @@ type EntitySettings struct {
 }
 
 type EntityManager struct {
-	Population     []People
-	DrawPopulation []DrawPeople
-	Market         Market
-	World          World
+	Population  []People
+	GroupPeople []GroupPeople
+	Market      Market
+	World       World
 }
 
 func InitEntityManager(entitySettings EntitySettings) EntityManager {
 
 	populationCount := entitySettings.Population
 	peopleList := make([]People, populationCount)
-	drawPeopleList := []DrawPeople{}
+	grounpPeople := []GroupPeople{}
+	var currentGrounpId string
 	count := 0
 	for i := 0; i < populationCount; i++ {
 		if i%10000 == 0 {
 			log.Println(count)
-			obj := InitDrawPeople()
-			drawPeopleList = append(drawPeopleList, obj)
+			obj := InitGroupPeople()
+			grounpPeople = append(grounpPeople, obj)
+			currentGrounpId = obj.Id
 			count += 1
 		}
-		peopleList[i] = InitPerson()
+		peopleList[i] = InitPerson(currentGrounpId)
 	}
 
 	return EntityManager{
-		Population:     peopleList,
-		Market:         InitMarket(),
-		World:          InitWorld(),
-		DrawPopulation: drawPeopleList,
+		Population:  peopleList,
+		Market:      InitMarket(),
+		World:       InitWorld(),
+		GroupPeople: grounpPeople,
 	}
 }
 
@@ -67,19 +69,19 @@ const (
 
 var PeopleImage *ebiten.Image
 
-type DrawPeople struct {
-	Id            string
-	CenterX       float64
-	CenterY       float64
-	VelocityX     float64
-	VelocityY     float64
-	AccelerationX float64
-	AccelerationY float64
-	ImgNo         int
-	ImgDirection  int
+type GroupPeople struct {
+	Id           string
+	CenterX      float64
+	CenterY      float64
+	VelocityX    float64
+	VelocityY    float64
+	Acceleration float64
+	ImgNo        int
+	ImgDirection int
+	GroupWealth  float64
 }
 
-func InitDrawPeople() DrawPeople {
+func InitGroupPeople() GroupPeople {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	img, _, err := image.Decode(bytes.NewReader(images.Runner_png))
 	if PeopleImage == nil {
@@ -89,20 +91,20 @@ func InitDrawPeople() DrawPeople {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return DrawPeople{
-		Id:            uuid.New().String(),
-		CenterX:       x,
-		CenterY:       y,
-		VelocityX:     r.Float64(),
-		VelocityY:     r.Float64(),
-		AccelerationX: r.Float64(),
-		AccelerationY: r.Float64(),
-		ImgNo:         r.Intn(5),
-		ImgDirection:  r.Intn(2),
+	return GroupPeople{
+		Id:           uuid.New().String(),
+		CenterX:      x,
+		CenterY:      y,
+		VelocityX:    r.Float64(),
+		VelocityY:    r.Float64(),
+		Acceleration: r.Float64(),
+		ImgNo:        r.Intn(5),
+		ImgDirection: r.Intn(2),
+		GroupWealth:  0,
 	}
 }
 
-func (d *DrawPeople) DrawParameter(screen *ebiten.Image, count int) (*ebiten.Image, *ebiten.DrawImageOptions) {
+func (d *GroupPeople) DrawParameter(screen *ebiten.Image, count int) (*ebiten.Image, *ebiten.DrawImageOptions) {
 	// set image position
 	imgX := rawDrawCenterX + d.CenterX
 	imgY := rawDrawCenterY + d.CenterY
@@ -121,16 +123,20 @@ func (d *DrawPeople) DrawParameter(screen *ebiten.Image, count int) (*ebiten.Ima
 }
 
 type People struct {
-	Id     string
-	Salary int
-	Assets int
+	GroupId      string
+	Id           string
+	Productivity float64
+	Savings      float64
+	Operations   []Operations
 }
 
-func InitPerson() People {
+func InitPerson(grounpId string) People {
 	return People{
-		Id:     uuid.New().String(),
-		Salary: 500,
-		Assets: 0,
+		Id:           uuid.New().String(),
+		Productivity: rand.Float64() * 500,
+		Savings:      0,
+		Operations:   []Operations{},
+		GroupId:      grounpId,
 	}
 }
 
@@ -140,14 +146,16 @@ const (
 )
 
 type World struct {
-	Width  float64
-	Height float64
+	Width       float64
+	Height      float64
+	WorldWealth float64
 }
 
 func InitWorld() World {
 	return World{
-		Width:  WorldWidth,
-		Height: WorldHeight,
+		Width:       WorldWidth,
+		Height:      WorldHeight,
+		WorldWealth: 0,
 	}
 }
 
@@ -179,16 +187,3 @@ func (m *Market) DrawParameter(screen *ebiten.Image) (*ebiten.Image, *ebiten.Dra
 	op.GeoM.Translate(imgX, imgY)
 	return MarketImage, op
 }
-
-// type TextBox struct{}
-
-// func Draw() {
-// 	inpututil.IsMouseButtonJustPressed(ebiten.MouseButton0)
-// 	ebiten.CursorPosition() // get the mouse cursor position
-// 	moust := ebiten.MouseButton0
-// }
-
-// Probably first start up a setting secen
-// then when the moust click start, start rendering the entire window and flush out all settings
-// create a scene manager perhaps to control the flow of the simulation
-// like converting settings -> start rendering

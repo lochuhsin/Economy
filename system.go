@@ -1,35 +1,76 @@
 package main
 
-func PeopleMovement(entityManager *EntityManager) {
-	_ = entityManager.World
-	// for i := 0; i < len(entityManager.DrawPopulation); i++ {
-	// 	entityManager.DrawPopulation[i].AccelerationX += (float64(rand.Intn(3)) - 1) * 0.1
-	// 	entityManager.DrawPopulation[i].AccelerationY += (float64(rand.Intn(3)) - 1) * 0.1
+import "math/rand"
 
-	// 	entityManager.DrawPopulation[i].VelocityX += entityManager.DrawPopulation[i].AccelerationX
-	// 	entityManager.DrawPopulation[i].VelocityY += entityManager.DrawPopulation[i].AccelerationY
+type Operations int
 
-	// 	if entityManager.DrawPopulation[i].VelocityX > 2 || entityManager.DrawPopulation[i].VelocityX < -2 {
-	// 		entityManager.DrawPopulation[i].AccelerationX *= -1
-	// 		entityManager.DrawPopulation[i].VelocityX = 2
-	// 	}
+const (
+	Save              Operations = 0
+	Spend             Operations = 1
+	InvestProductivty Operations = 2
+)
 
-	// 	if entityManager.DrawPopulation[i].VelocityY > 2 || entityManager.DrawPopulation[i].VelocityY > -2 {
-	// 		entityManager.DrawPopulation[i].AccelerationY *= -1
-	// 		entityManager.DrawPopulation[i].VelocityY = 2
-	// 	}
-
-	// 	entityManager.DrawPopulation[i].CenterX += entityManager.DrawPopulation[i].VelocityX
-	// 	entityManager.DrawPopulation[i].CenterY += entityManager.DrawPopulation[i].VelocityY
-
-	// 	if entityManager.DrawPopulation[i].CenterX >= world.Width || entityManager.DrawPopulation[i].CenterX <= 0 {
-	// 		entityManager.DrawPopulation[i].VelocityX *= -1
-
-	// 	}
-	// 	if entityManager.DrawPopulation[i].CenterY >= world.Height || entityManager.DrawPopulation[i].CenterY <= 0 {
-	// 		entityManager.DrawPopulation[i].VelocityY *= -1
-	// 	}
-	// }
+func ExceedBoundary(position float64, boundary int) bool {
+	return position < 0 || position >= float64(boundary)
 }
 
-func Transaction(entityManager *EntityManager) {}
+func Direction() float64 {
+	if rand.Float32() < 0.5 {
+		return -1
+	}
+	return 1
+}
+
+func PeopleMovement(entities *EntityManager) {
+	world := entities.World
+	for i := 0; i < len(entities.GroupPeople); i++ {
+		entities.GroupPeople[i].VelocityX += entities.GroupPeople[i].Acceleration * Direction()
+		entities.GroupPeople[i].VelocityY += entities.GroupPeople[i].Acceleration * Direction()
+
+		entities.GroupPeople[i].CenterX += entities.GroupPeople[i].VelocityX
+		entities.GroupPeople[i].CenterY += entities.GroupPeople[i].VelocityY
+
+		if ExceedBoundary(entities.GroupPeople[i].CenterX, int(world.Width)) {
+			entities.GroupPeople[i].VelocityX *= -1
+		}
+
+		if ExceedBoundary(entities.GroupPeople[i].CenterY, int(world.Height)) {
+			entities.GroupPeople[i].VelocityY *= -1
+		}
+	}
+}
+
+func Transaction(entityManager *EntityManager) {
+	population := entityManager.Population
+
+	for i := 0; i < len(population); i++ {
+		op := Operations(rand.Intn(3))
+		salary := population[i].Productivity
+		switch op {
+		case Save:
+			population[i].Savings += salary
+		case InvestProductivty:
+			population[i].Productivity += salary
+		case Spend:
+			continue
+		default:
+			continue
+		}
+		population[i].Operations = append(population[i].Operations, op)
+	}
+}
+
+func GroupTotalWealth(manager *EntityManager) {
+	var totalWealth float64
+	groupWealth := map[string]float64{}
+
+	for _, p := range manager.Population {
+		totalWealth += p.Savings
+		groupWealth[p.GroupId] += p.Savings
+	}
+	for i := 0; i < len(manager.GroupPeople); i++ {
+		gid := manager.GroupPeople[i].Id
+		manager.GroupPeople[i].GroupWealth = groupWealth[gid]
+	}
+	manager.World.WorldWealth = totalWealth
+}
