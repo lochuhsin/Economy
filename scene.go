@@ -8,29 +8,33 @@ import (
 )
 
 type Game struct {
-	count         int
-	entityManager EntityManager
-	camera        Camera
+	count            int
+	camera           Camera
+	systemChannel    chan EntityManager
+	preEntityManager *EntityManager // save previous frame information incase it's blocked
 }
 
-func InitGameScene(entitySettings EntitySettings) *Game {
-	return &Game{0, InitEntityManager(entitySettings), InitCamera(0, 0)}
+func InitGameScene(systemChannel chan EntityManager) *Game {
+	return &Game{0, InitCamera(0, 0), systemChannel, nil}
 }
 
 func (g *Game) Update() error {
 	g.count++
 	g.camera.Update()
-
-	// pass entity manager through system to update
-	PeopleMovement(&g.entityManager)
-	Transaction(&g.entityManager)
-	GroupTotalWealth(&g.entityManager)
-
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.camera.Draw(screen, &g.entityManager, g.count)
+	select {
+	case manager := <-g.systemChannel:
+		g.preEntityManager = &manager
+		g.camera.Draw(screen, &manager, g.count)
+	default:
+		if g.preEntityManager != nil {
+			g.camera.Draw(screen, g.preEntityManager, g.count)
+		}
+	}
+
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f\nFPS: %0.2f\n", ebiten.ActualTPS(), ebiten.ActualFPS()))
 }
 

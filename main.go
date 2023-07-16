@@ -21,10 +21,15 @@ func main() {
 
 	// Initialize People with concurrency e.g 100 people per batch
 	entitySettings := EntitySettings{
-		Population: 100000,
+		Population: 1000000,
 	}
 
-	game := InitGameScene(entitySettings)
+	systemChannel := make(chan EntityManager, 100000)
+
+	system := InitSystemManager(entitySettings)
+	game := InitGameScene(systemChannel)
+
+	go system.Run(systemChannel)
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
